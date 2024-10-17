@@ -1,0 +1,50 @@
+<html>
+<head>
+    <script>
+        var ws = null
+
+        function addText(text) {
+            document.getElementById("chatBox").innerHTML += "<div style=\"margin-top:10px\">" + text + "</div>"
+        }
+
+        function initWS() {
+            console.log("init ws.....")
+            ws = new WebSocket('/ws/demo4');
+            
+            ws.onopen = (event) => {
+                addText("connected...")
+            };
+
+            ws.onmessage = (event) => {
+                
+                addText(event.data)
+            };     
+
+            ws.onerror = (event) => {
+
+                initWS()
+            };
+        }
+
+        function send() {
+            question = document.getElementById("txtQuestion").value
+            document.getElementById("txtQuestion").value = ""
+
+            addText(question)
+
+            ws.send(question) 
+        }
+    </script>
+</head>
+<body onload="initWS()">
+    <div>DEMO 4 - Text To Speech</div>
+    <br>
+    <div id="chatBox" style="border: 1px solid #000000; height: 300px;overflow: auto;padding: 5px;"></div>
+    <br>
+    <div>
+        Question :
+        <input id="txtQuestion" type="text">
+        <button onclick="send()">Send</button>
+    </div>
+</body>
+</html>
