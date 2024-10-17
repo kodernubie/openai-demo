@@ -1,7 +1,8 @@
-package demo1
+package demo3
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -15,7 +16,7 @@ var client *openai.Client
 
 func Init(app *fiber.App) {
 
-	app.Get("/ws/demo1", websocket.New(func(c *websocket.Conn) {
+	app.Get("/ws/demo3", websocket.New(func(c *websocket.Conn) {
 
 		var msg []byte
 		var err error
@@ -28,6 +29,7 @@ func Init(app *fiber.App) {
 
 			log.Printf("recv: %s", msg)
 
+			fmt.Println("masuk... 111111")
 			handler(c, msg)
 		}
 	}))
@@ -44,27 +46,24 @@ func getClient() *openai.Client {
 
 func handler(c *websocket.Conn, msg []byte) {
 
-	resp, err := getClient().CreateChatCompletion(
+	resp, err := getClient().CreateImage(
 		context.Background(),
-		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: "You are a polite chat bot. Response question with sydney sheldon style",
-				},
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: string(msg),
-				},
-			},
+		openai.ImageRequest{
+			Model:   openai.CreateImageModelDallE3,
+			Prompt:  string(msg),
+			N:       1,
+			Size:    openai.CreateImageSize1024x1024,
+			Quality: openai.CreateImageQualityHD,
+			Style:   openai.CreateImageStyleNatural,
 		},
 	)
 
 	if err != nil {
+		fmt.Print("====>", err)
 		c.WriteMessage(1, []byte("Error :"+err.Error()))
 		return
 	}
 
-	c.WriteMessage(1, []byte(resp.Choices[0].Message.Content))
+	fmt.Printf("==>>> %+v", resp)
+	c.WriteMessage(1, []byte(resp.Data[0].URL))
 }

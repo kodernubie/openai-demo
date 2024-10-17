@@ -1,7 +1,9 @@
-package demo1
+package demo2
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -11,11 +13,16 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+type UserEvent struct {
+	Text     string `json:"text"`
+	ImageURL string `json:"imageURL"`
+}
+
 var client *openai.Client
 
 func Init(app *fiber.App) {
 
-	app.Get("/ws/demo1", websocket.New(func(c *websocket.Conn) {
+	app.Get("/ws/demo2", websocket.New(func(c *websocket.Conn) {
 
 		var msg []byte
 		var err error
@@ -28,6 +35,7 @@ func Init(app *fiber.App) {
 
 			log.Printf("recv: %s", msg)
 
+			fmt.Println("masuk... 111111")
 			handler(c, msg)
 		}
 	}))
@@ -44,6 +52,38 @@ func getClient() *openai.Client {
 
 func handler(c *websocket.Conn, msg []byte) {
 
+	event := UserEvent{}
+
+	err := json.Unmarshal(msg, &event)
+
+	fmt.Println("masuk... 2222222")
+
+	if err != nil {
+		fmt.Println("masuk... error", err)
+		c.WriteMessage(1, []byte("Error :"+err.Error()))
+		return
+	}
+
+	userContent := []openai.ChatMessagePart{}
+
+	if event.ImageURL != "" {
+		userContent = append(userContent, openai.ChatMessagePart{
+			Type: openai.ChatMessagePartTypeImageURL,
+			ImageURL: &openai.ChatMessageImageURL{
+				URL: event.ImageURL,
+			},
+		})
+	}
+
+	if event.Text != "" {
+		userContent = append(userContent, openai.ChatMessagePart{
+			Type: openai.ChatMessagePartTypeText,
+			Text: event.Text,
+		})
+	}
+
+	fmt.Println("masuk... 33333")
+
 	resp, err := getClient().CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -54,8 +94,8 @@ func handler(c *websocket.Conn, msg []byte) {
 					Content: "You are a polite chat bot. Response question with sydney sheldon style",
 				},
 				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: string(msg),
+					Role:         openai.ChatMessageRoleUser,
+					MultiContent: userContent,
 				},
 			},
 		},
@@ -66,5 +106,6 @@ func handler(c *websocket.Conn, msg []byte) {
 		return
 	}
 
+	fmt.Printf("==>>> %+v", resp)
 	c.WriteMessage(1, []byte(resp.Choices[0].Message.Content))
 }

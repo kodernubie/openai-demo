@@ -7,9 +7,13 @@
             document.getElementById("chatBox").innerHTML += "<div style=\"margin-top:10px\">" + text + "</div>"
         }
 
+        function addImage(url) {
+            document.getElementById("chatBox").innerHTML += "<div style=\"margin-top:10px\"><img src=\"" + url + "\"></div>"
+        }
+
         function initWS() {
             console.log("init ws.....")
-            ws = new WebSocket('/ws/demo1');
+            ws = new WebSocket('/ws/demo2');
             
             ws.onopen = (event) => {
                 addText("connected...")
@@ -27,23 +31,36 @@
         }
 
         function send() {
+
+            url = document.getElementById("txtImage").value
             question = document.getElementById("txtQuestion").value
+
+            if (url != "") {
+                addImage(url)
+            }
+
+            addText(document.getElementById("txtQuestion").value)
+
+            ws.send(JSON.stringify({
+                text : question,
+                imageUrl : url
+            })) 
+
             document.getElementById("txtQuestion").value = ""
-
-            addText(question)
-
-            ws.send(question) 
+            document.getElementById("txtImage").value = ""
         }
     </script>
 </head>
 <body onload="initWS()">
-    <div>DEMO 1 - Text Completion</div>
+    <div>DEMO 2 - Text Completion with Image</div>
     <br>
     <div id="chatBox" style="border: 1px solid #000000; height: 300px;overflow: auto;padding: 5px;"></div>
     <br>
     <div>
-        Question :
-        <input id="txtQuestion" type="text">
+        Image :<input id="txtImage" type="text">
+        <br>
+        Question :<input id="txtQuestion" type="text">
+        <br>
         <button onclick="send()">Send</button>
     </div>
 </body>
